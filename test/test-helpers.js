@@ -1,3 +1,5 @@
+const bcrypt = require('bcryptjs')
+
 function makeAuthHeader(user) {
   const token = Buffer.from(`${user.user_name}:${user.password}`).toString('base64')
   return `Bearer ${token}`
@@ -235,10 +237,18 @@ function cleanTables(db) {
   )
 }
 
-function seedThingsTables(db, users, things, reviews=[]) {
+function seedUsers(db, users) {
+  const preppedUsers = users.map(user => ({
+    ...user,
+    password: bcrypt.hashSync(user.password, 1)
+  }))
   return db
     .into('thingful_users')
-    .insert(users)
+    .insert(preppedUsers)
+}
+
+function seedThingsTables(db, users, things, reviews=[]) {
+  return seedUsers(db, users)
     .then(() =>
       db
         .into('thingful_things')
@@ -250,9 +260,7 @@ function seedThingsTables(db, users, things, reviews=[]) {
 }
 
 function seedMaliciousThing(db, user, thing) {
-  return db
-    .into('thingful_users')
-    .insert([user])
+  return seedUsers(db, [user])
     .then(() =>
       db
         .into('thingful_things')
@@ -272,5 +280,6 @@ module.exports = {
   cleanTables,
   seedThingsTables,
   seedMaliciousThing,
-  makeAuthHeader
+  makeAuthHeader,
+  seedUsers
 }

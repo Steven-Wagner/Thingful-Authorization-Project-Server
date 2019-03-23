@@ -1,4 +1,5 @@
 const AuthService = require('../auth/auth-service')
+const bcrypt = require('bcryptjs')
 
 function requireAuth(req, res, next) {
     const authToken = req.get('authorization') || ''
@@ -27,13 +28,16 @@ function requireAuth(req, res, next) {
             return res.status(401).json({error: 'user does not exist'})
         }
 
-        if (tokenUserPassword !== userData.password) {
-            return res.status(401).json({error:'Invalid password'})
-        }
+        return bcrypt.compare(tokenUserPassword, userData.password)
+            .then(passwordMatch => {
+                if (!passwordMatch) {
+                    return res.status(401).json({error: 'Invalid password'})
+                }
 
-        req.user = userData
+                req.user = userData
 
-        next()
+                next()
+            })
     })
     .catch(next)
 
