@@ -2,7 +2,7 @@ const knex = require('knex')
 const app = require('../src/app')
 const helpers = require('./test-helpers')
 
-describe('Things Endpoints', function() {
+describe.only('Things Endpoints', function() {
   let db
 
   const {
@@ -60,18 +60,18 @@ describe('Things Endpoints', function() {
             .set('Authorization', badUser)
             .expect(401, {error: 'Missing bearer token'})
       })
-      it(`responds with 401 'user does not exist'`, () => {
-          const badUser = {user_name: 'Steve', password: 'wrong'}
+      it(`responds with 401 with bad secret`, () => {
+          const validUser = testUsers[0]
+          const badSecret = 'bad-secret'
           return endpoint.method(endpoint.path)
-            .set('Authorization', helpers.makeAuthHeader(badUser))
-            .expect(401, {error: 'user does not exist'})
+            .set('Authorization', helpers.makeAuthHeader(validUser, badSecret))
+            .expect(401, {error: `Unauthorized request`})
       })
-      it(`responds with 401 'invalid password'`, () => {
-          const users_name = testUsers[0].user_name
-          const badUser = {user_name: users_name, password: 'wrong'}
+      it(`responds with 401 with invalid user in sub payload`, () => {
+          const validUser = {user_name: 'bad-user', id: 1}
           return endpoint.method(endpoint.path)
-            .set('Authorization', helpers.makeAuthHeader(badUser))
-            .expect(401, {error: 'Invalid password'})
+            .set('Authorization', helpers.makeAuthHeader(validUser))
+            .expect(401, {error: `Unauthorized request`})
       })
     })
   })
